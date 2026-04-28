@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-04-26T21:45:25-0300",
-    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.1 (Amazon.com Inc.)"
+    date = "2026-04-28T18:42:09-0300",
+    comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.45.0.v20260224-0835, environment: Java 21.0.10 (Eclipse Adoptium)"
 )
 @Component
 public class FeedbackMapperImpl implements FeedbackMapper {
@@ -25,9 +25,9 @@ public class FeedbackMapperImpl implements FeedbackMapper {
         Feedback.FeedbackBuilder feedback = Feedback.builder();
 
         feedback.patient( feedbackRequestDTOToPatient( dto ) );
-        feedback.sessaoId( dto.getSessaoId() );
         feedback.content( dto.getContent() );
         feedback.moodScore( dto.getMoodScore() );
+        feedback.sessaoId( dto.getSessaoId() );
 
         return feedback.build();
     }
@@ -41,11 +41,11 @@ public class FeedbackMapperImpl implements FeedbackMapper {
         FeedbackResponseDTO feedbackResponseDTO = new FeedbackResponseDTO();
 
         feedbackResponseDTO.setPatientId( entityPatientId( entity ) );
-        feedbackResponseDTO.setId( entity.getId() );
-        feedbackResponseDTO.setSessaoId( entity.getSessaoId() );
         feedbackResponseDTO.setContent( entity.getContent() );
-        feedbackResponseDTO.setMoodScore( entity.getMoodScore() );
         feedbackResponseDTO.setCreatedAt( entity.getCreatedAt() );
+        feedbackResponseDTO.setId( entity.getId() );
+        feedbackResponseDTO.setMoodScore( entity.getMoodScore() );
+        feedbackResponseDTO.setSessaoId( entity.getSessaoId() );
 
         return feedbackResponseDTO;
     }
