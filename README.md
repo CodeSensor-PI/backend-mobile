@@ -65,7 +65,7 @@ podman run -d --name psimobile_backend --network psimobile_net -p 8080:8080 -e S
 Se você possuir Java 21 e Maven instalados na máquina, configure as variáveis no seu `.env` ou execute passando os parâmetros:
 ```bash
 # Definir a chave da API do Gemini (Windows Powershell):
-$env:GEMINI_API_KEY="sua-chave-aqui"
+$env:GEMINI_API_KEY="[GCP_API_KEY]"
 
 # Executar a aplicação via Maven
 mvn spring-boot:run
