@@ -2,94 +2,99 @@
 
 Este é o backend do ecossistema mobile **Psi Rizerio**, construído com Java 21, Spring Boot 3.x, PostgreSQL, e integrado à Inteligência Artificial (Google Gemini) para a geração de relatórios clínicos a partir do feedback dos pacientes.
 
+---
+
 ## Arquitetura
 
 O projeto utiliza **Domain-Driven Design (DDD)** aliado à estratégia de **Package by Feature**.
-Isso significa que a aplicação está dividida verticalmente por domínio funcional:
+A aplicação está dividida verticalmente por domínio funcional:
 - **`auth`**: Segurança, Autenticação, Usuários, JWT e Roles.
-- **`patient`**: Domínio central do Paciente (Dados Pessoais, Anotações).
-- **`feedback`**: Domínio para capturar os relatos e métricas (ex: humor) fornecidos pelo paciente no app mobile.
-- **`report`**: Domínio responsável pela geração de relatórios através da Inteligência Artificial.
+- **`patient`**: Domínio central do Paciente (Dados Pessoais, Anotações, Localização).
+- **`feedback`**: Domínio para capturar os relatos e métricas (ex: humor) fornecidos pelo paciente.
+- **`report`**: Domínio responsável pela geração de relatórios através do Google Gemini.
 
-Em cada feature, as camadas respeitam a segregação do DDD:
-- **`domain`**: Entidades e Interfaces de Repositório/Portas (Sem acoplamento com infra/web).
-- **`application`**: Casos de uso, Services, DTOs e Mappers (MapStruct).
-- **`infrastructure`**: Implementações de persistência (JPA) e Integrações (RestTemplate para Gemini).
-- **`interfaces`**: Controladores REST para expor os endpoints.
-
-## Especificação da Integração com IA (Google Gemini)
-
-O backend realiza a geração automática de relatórios evolutivos.
-
-### Como funciona no Backend
-1. Quando o endpoint `POST /api/v1/patients/{id}/reports/generate` é chamado, o sistema busca o Paciente e seus `Feedbacks` recentes.
-2. O `ReportService` orquestra a construção de um "Prompt" combinando as notas clínicas do paciente e as entradas de diário/feedbacks (com datas e humor).
-3. O prompt é enviado ao Google Gemini via integração HTTP REST direta.
-4. A IA analisa os sentimentos, traça a evolução do paciente e identifica alertas de risco, retornando um texto formatado em Markdown.
-5. O resultado é armazenado no banco como um `Report` associado ao paciente.
-
-### Como aplicar no Frontend (Mobile)
-1. **Histórico de Feedbacks**: O paciente insere feedbacks via mobile e o frontend consome a API (`POST /api/v1/feedbacks`).
-2. **Área do Profissional**: O psicólogo ou profissional de saúde acessa o perfil do paciente e clica em "Gerar Relatório de Evolução com IA".
-3. O app mobile chama o endpoint de geração.
-4. O app recebe o resultado (campo `aiAnalysisContent` em Markdown) e o exibe utilizando uma biblioteca de renderização Markdown (ex: `react-native-markdown-display`).
+---
 
 ## Tecnologias Utilizadas
-- Java 21 & Spring Boot 3.2.x
-- PostgreSQL 15
+- Java 21 & Spring Boot 3.2.x (compilado via container)
+- PostgreSQL 15 & Flyway para migrações
 - MapStruct & Lombok
-- Spring Security & JWT (jjwt)
-- Docker & Docker Compose
+- Podman / Docker
 
-## Pré-requisitos
-- Docker e Docker Compose instalados.
-- (Opcional) Java 21 e Maven para rodar localmente sem Docker.
+---
 
-## Como Executar
+## Como Executar o Banco de Dados (PostgreSQL)
 
-### Usando Docker (Recomendado)
-Para iniciar toda a infraestrutura (Banco de Dados PostgreSQL e a Aplicação Spring Boot):
+O projeto está totalmente migrado para o PostgreSQL (H2 removido). Para rodar o banco usando **Podman**, siga os passos abaixo:
 
-1. Defina a chave da API do Gemini (Windows Powershell):
-```powershell
+1. **Criar a rede no Podman:**
+   ```bash
+   podman network create psimobile_net
+   ```
+
+2. **Iniciar o container do PostgreSQL:**
+   ```bash
+   podman run -d --name psimobile_postgres --network psimobile_net -p 5432:5432 -e POSTGRES_DB=psimobile -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=12345 -v postgres_data:/var/lib/postgresql/data postgres:15-alpine
+   ```
+
+3. **(Opcional) Restaurar o dump de dados de simulação:**
+   Caso queira iniciar o banco a partir do dump de simulação gerado:
+   ```bash
+   # Copiar o arquivo dump.sql para dentro do container
+   podman cp dump.sql psimobile_postgres:/tmp/dump.sql
+   # Importar o dump
+   podman exec -it psimobile_postgres psql -U postgres -d psimobile -f /tmp/dump.sql
+   ```
+
+---
+
+## Como Executar o Backend
+
+### 1. Usando Containers (Podman)
+Você pode buildar e rodar o backend encapsulado em um container na mesma rede do banco:
+
+```bash
+# 1. Buildar a imagem do backend
+podman build -t psimobile_backend .
+
+# 2. Iniciar o container do backend conectado à rede
+podman run -d --name psimobile_backend --network psimobile_net -p 8080:8080 -e SPRING_DATASOURCE_URL=jdbc:postgresql://psimobile_postgres:5432/psimobile -e SPRING_DATASOURCE_USERNAME=postgres -e SPRING_DATASOURCE_PASSWORD=12345 psimobile_backend
+```
+
+### 2. Rodando Localmente
+Se você possuir Java 21 e Maven instalados na máquina, configure as variáveis no seu `.env` ou execute passando os parâmetros:
+```bash
+# Definir a chave da API do Gemini (Windows Powershell):
 $env:GEMINI_API_KEY="sua-chave-aqui"
-```
-2. Suba o ambiente:
-```bash
-docker-compose up --build -d
-```
-3. A aplicação estará rodando em: `http://localhost:8080`.
 
-### Rodando Localmente (Sem Docker)
-1. Suba apenas o PostgreSQL no Docker Compose ou tenha um banco local rodando na porta 5432 com banco `psimobile` e credenciais `postgres/postgres`.
-```bash
-docker-compose up postgres -d
-```
-2. Rode a aplicação com Maven:
-```bash
-set GEMINI_API_KEY=sua-chave-aqui
+# Executar a aplicação via Maven
 mvn spring-boot:run
 ```
 
+A API estará disponível localmente em: `http://localhost:8080`.
+
+---
+
 ## Endpoints Principais
+*Todos os endpoints que não sejam de autenticação exigem o header: `Authorization: Bearer <seu-token-jwt>`*
 
 ### Autenticação (`/api/v1/auth`)
-- `POST /api/v1/auth/register` - Registra um novo usuário (Profissional).
-- `POST /api/v1/auth/authenticate` - Autentica o usuário e retorna o token JWT.
+- `POST /api/v1/auth/register` - Registra um novo psicólogo.
+- `POST /api/v1/auth/authenticate` - Realiza login (Credenciais padrão de teste: `psicologo@teste.com` / `senha123`).
 
-*Todos os próximos endpoints exigem o Header: `Authorization: Bearer <seu-token-jwt>`*
+### Pacientes (`/clientes`)
+- `GET /clientes` - Lista pacientes.
+- `POST /clientes` - Cria um novo paciente (contendo latitude/longitude).
 
-### Pacientes (`/api/v1/patients`)
-- `GET /api/v1/patients` - Lista pacientes.
-- `POST /api/v1/patients` - Cria um novo paciente.
-- `GET /api/v1/patients/{id}` - Busca um paciente por ID.
-- `PUT /api/v1/patients/{id}` - Atualiza um paciente.
-- `DELETE /api/v1/patients/{id}` - Remove um paciente.
+### Agenda e Sessões (`/sessoes`)
+- `GET /sessoes` - Lista sessões cadastradas.
+- `POST /sessoes` - Cria um agendamento.
+- `PUT /sessoes/cancelar/{id}` - Cancela uma sessão por ID.
 
 ### Feedbacks (`/api/v1/feedbacks`)
-- `POST /api/v1/feedbacks` - Registra um novo feedback do paciente.
-- `GET /api/v1/feedbacks/patient/{patientId}` - Lista todos os feedbacks de um paciente.
+- `POST /api/v1/feedbacks` - Registra um novo feedback do paciente (humor e diário).
+- `GET /api/v1/feedbacks/patient/{patientId}` - Lista todos os feedbacks de um paciente específico.
 
 ### Relatórios com IA (`/api/v1/patients/{patientId}/reports`)
-- `POST /api/v1/patients/{patientId}/reports/generate` - Solicita à IA a geração de um relatório com base no histórico.
-- `GET /api/v1/patients/{patientId}/reports` - Lista o histórico de relatórios gerados para aquele paciente.
+- `POST /api/v1/patients/{patientId}/reports/generate` - Solicita à IA a geração de um relatório com base nos feedbacks.
+- `GET /api/v1/patients/{patientId}/reports` - Lista o histórico de relatórios gerados.

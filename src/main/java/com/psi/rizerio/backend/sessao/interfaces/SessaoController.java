@@ -72,11 +72,24 @@ public class SessaoController {
 
     @GetMapping("/semana")
     public ResponseEntity<List<Sessao>> getSessoesSemana(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate segunda,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate segunda,
+            @RequestParam(required = false) Integer mes,
+            @RequestParam(required = false) Integer ano,
             @RequestParam(required = false, defaultValue = "40") int size) {
         
-        LocalDateTime start = segunda.atStartOfDay();
-        LocalDateTime end = segunda.plusDays(7).atTime(LocalTime.MAX);
+        LocalDateTime start;
+        LocalDateTime end;
+
+        if (segunda != null) {
+            start = segunda.atStartOfDay();
+            end = segunda.plusDays(7).atTime(LocalTime.MAX);
+        } else if (mes != null && ano != null) {
+            LocalDate firstDayOfMonth = LocalDate.of(ano, mes, 1);
+            start = firstDayOfMonth.atStartOfDay();
+            end = firstDayOfMonth.plusMonths(1).minusDays(1).atTime(LocalTime.MAX);
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
         
         return ResponseEntity.ok(sessaoRepository.findByStartTimeBetween(start, end));
     }

@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-04-28T18:42:08-0300",
-    comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.45.0.v20260224-0835, environment: Java 21.0.10 (Eclipse Adoptium)"
+    date = "2026-05-24T19:45:13-0300",
+    comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.46.0.v20260407-0427, environment: Java 21.0.10 (Eclipse Adoptium)"
 )
 @Component
 public class PatientMapperImpl implements PatientMapper {
@@ -31,6 +31,8 @@ public class PatientMapperImpl implements PatientMapper {
         patient.email( dto.getEmail() );
         patient.emergencyContact( dto.getEmergencyContact() );
         patient.emergencyPhone( dto.getEmergencyPhone() );
+        patient.latitude( dto.getLatitude() );
+        patient.longitude( dto.getLongitude() );
         patient.name( dto.getName() );
         patient.neighborhood( dto.getNeighborhood() );
         patient.phone( dto.getPhone() );
@@ -58,6 +60,8 @@ public class PatientMapperImpl implements PatientMapper {
         patientResponseDTO.setEmergencyContact( entity.getEmergencyContact() );
         patientResponseDTO.setEmergencyPhone( entity.getEmergencyPhone() );
         patientResponseDTO.setId( entity.getId() );
+        patientResponseDTO.setLatitude( entity.getLatitude() );
+        patientResponseDTO.setLongitude( entity.getLongitude() );
         patientResponseDTO.setName( entity.getName() );
         patientResponseDTO.setNeighborhood( entity.getNeighborhood() );
         patientResponseDTO.setPhone( entity.getPhone() );
@@ -83,6 +87,8 @@ public class PatientMapperImpl implements PatientMapper {
         entity.setEmail( dto.getEmail() );
         entity.setEmergencyContact( dto.getEmergencyContact() );
         entity.setEmergencyPhone( dto.getEmergencyPhone() );
+        entity.setLatitude( dto.getLatitude() );
+        entity.setLongitude( dto.getLongitude() );
         entity.setName( dto.getName() );
         entity.setNeighborhood( dto.getNeighborhood() );
         entity.setPhone( dto.getPhone() );

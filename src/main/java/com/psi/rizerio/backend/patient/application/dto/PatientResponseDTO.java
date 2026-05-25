@@ -22,4 +22,7 @@ public class PatientResponseDTO {
     private String emergencyPhone;
     private String photo;
     private String clinicalNotes;
+
+    private Double latitude;
+    private Double longitude;
 }

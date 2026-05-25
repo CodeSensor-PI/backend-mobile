@@ -38,6 +38,9 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/clientes/user/**").hasAnyAuthority("ADMIN", "PSYCHOLOGIST", "USER", "CLIENTE")
                 .requestMatchers(org.springframework.http.HttpMethod.PUT, "/clientes/**").hasAnyAuthority("ADMIN", "PSYCHOLOGIST", "USER", "CLIENTE")
 
+                // Dashboard de Inteligência Clínica — todos os roles autenticados
+                .requestMatchers("/api/v1/dashboard/**").hasAnyAuthority("ADMIN", "PSYCHOLOGIST", "USER", "CLIENTE")
+
                 // Relatórios IA e Feedbacks — todos os roles autenticados
                 .requestMatchers("/api/v1/patients/{patientId}/reports/**", "/api/v1/feedbacks/**").hasAnyAuthority("ADMIN", "PSYCHOLOGIST", "USER", "CLIENTE")
 

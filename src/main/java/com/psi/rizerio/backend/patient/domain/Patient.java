@@ -50,4 +50,7 @@ public class Patient {
     private String cep;
     private String emergencyContact;
     private String emergencyPhone;
+
+    private Double latitude;
+    private Double longitude;
 }
