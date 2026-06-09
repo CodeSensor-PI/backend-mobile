@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-06-05T21:57:36-0300",
-    comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.46.0.v20260407-0427, environment: Java 21.0.10 (Eclipse Adoptium)"
+    date = "2026-06-09T19:15:17-0300",
+    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.9 (Oracle Corporation)"
 )
 @Component
 public class PatientMapperImpl implements PatientMapper {
@@ -22,22 +22,22 @@ public class PatientMapperImpl implements PatientMapper {
 
         Patient.PatientBuilder patient = Patient.builder();
 
-        patient.address( dto.getAddress() );
-        patient.birthDate( dto.getBirthDate() );
-        patient.cep( dto.getCep() );
-        patient.city( dto.getCity() );
-        patient.clinicalNotes( dto.getClinicalNotes() );
-        patient.cpf( dto.getCpf() );
+        patient.name( dto.getName() );
         patient.email( dto.getEmail() );
+        patient.phone( dto.getPhone() );
+        patient.birthDate( dto.getBirthDate() );
+        patient.photo( dto.getPhoto() );
+        patient.cpf( dto.getCpf() );
+        patient.clinicalNotes( dto.getClinicalNotes() );
+        patient.address( dto.getAddress() );
+        patient.neighborhood( dto.getNeighborhood() );
+        patient.city( dto.getCity() );
+        patient.state( dto.getState() );
+        patient.cep( dto.getCep() );
         patient.emergencyContact( dto.getEmergencyContact() );
         patient.emergencyPhone( dto.getEmergencyPhone() );
         patient.latitude( dto.getLatitude() );
         patient.longitude( dto.getLongitude() );
-        patient.name( dto.getName() );
-        patient.neighborhood( dto.getNeighborhood() );
-        patient.phone( dto.getPhone() );
-        patient.photo( dto.getPhoto() );
-        patient.state( dto.getState() );
 
         return patient.build();
     }
@@ -50,24 +50,24 @@ public class PatientMapperImpl implements PatientMapper {
 
         PatientResponseDTO patientResponseDTO = new PatientResponseDTO();
 
-        patientResponseDTO.setAddress( entity.getAddress() );
-        patientResponseDTO.setBirthDate( entity.getBirthDate() );
-        patientResponseDTO.setCep( entity.getCep() );
-        patientResponseDTO.setCity( entity.getCity() );
-        patientResponseDTO.setClinicalNotes( entity.getClinicalNotes() );
-        patientResponseDTO.setCpf( entity.getCpf() );
+        patientResponseDTO.setId( entity.getId() );
+        patientResponseDTO.setName( entity.getName() );
         patientResponseDTO.setEmail( entity.getEmail() );
+        patientResponseDTO.setPhone( entity.getPhone() );
+        patientResponseDTO.setBirthDate( entity.getBirthDate() );
+        patientResponseDTO.setUserId( entity.getUserId() );
+        patientResponseDTO.setCpf( entity.getCpf() );
+        patientResponseDTO.setAddress( entity.getAddress() );
+        patientResponseDTO.setNeighborhood( entity.getNeighborhood() );
+        patientResponseDTO.setCity( entity.getCity() );
+        patientResponseDTO.setState( entity.getState() );
+        patientResponseDTO.setCep( entity.getCep() );
         patientResponseDTO.setEmergencyContact( entity.getEmergencyContact() );
         patientResponseDTO.setEmergencyPhone( entity.getEmergencyPhone() );
-        patientResponseDTO.setId( entity.getId() );
+        patientResponseDTO.setPhoto( entity.getPhoto() );
+        patientResponseDTO.setClinicalNotes( entity.getClinicalNotes() );
         patientResponseDTO.setLatitude( entity.getLatitude() );
         patientResponseDTO.setLongitude( entity.getLongitude() );
-        patientResponseDTO.setName( entity.getName() );
-        patientResponseDTO.setNeighborhood( entity.getNeighborhood() );
-        patientResponseDTO.setPhone( entity.getPhone() );
-        patientResponseDTO.setPhoto( entity.getPhoto() );
-        patientResponseDTO.setState( entity.getState() );
-        patientResponseDTO.setUserId( entity.getUserId() );
 
         return patientResponseDTO;
     }
@@ -78,21 +78,21 @@ public class PatientMapperImpl implements PatientMapper {
             return;
         }
 
-        entity.setAddress( dto.getAddress() );
-        entity.setBirthDate( dto.getBirthDate() );
-        entity.setCep( dto.getCep() );
-        entity.setCity( dto.getCity() );
-        entity.setClinicalNotes( dto.getClinicalNotes() );
-        entity.setCpf( dto.getCpf() );
+        entity.setName( dto.getName() );
         entity.setEmail( dto.getEmail() );
+        entity.setPhone( dto.getPhone() );
+        entity.setBirthDate( dto.getBirthDate() );
+        entity.setPhoto( dto.getPhoto() );
+        entity.setCpf( dto.getCpf() );
+        entity.setClinicalNotes( dto.getClinicalNotes() );
+        entity.setAddress( dto.getAddress() );
+        entity.setNeighborhood( dto.getNeighborhood() );
+        entity.setCity( dto.getCity() );
+        entity.setState( dto.getState() );
+        entity.setCep( dto.getCep() );
         entity.setEmergencyContact( dto.getEmergencyContact() );
         entity.setEmergencyPhone( dto.getEmergencyPhone() );
         entity.setLatitude( dto.getLatitude() );
         entity.setLongitude( dto.getLongitude() );
-        entity.setName( dto.getName() );
-        entity.setNeighborhood( dto.getNeighborhood() );
-        entity.setPhone( dto.getPhone() );
-        entity.setPhoto( dto.getPhoto() );
-        entity.setState( dto.getState() );
     }
 }
