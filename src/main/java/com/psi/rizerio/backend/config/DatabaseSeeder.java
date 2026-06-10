@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -37,6 +38,54 @@ public class DatabaseSeeder implements CommandLineRunner {
         seedSessoesAndReports();
         seedFeedbacks();
         seedAgendfyData();
+        seedFotosEDadosFaltantes();
+    }
+
+    // Preenche fotos (avatar público) e campos vazios de pacientes e psicólogos,
+    // para nenhuma lista ficar com foto padrão ou dados em branco. Idempotente:
+    // só altera o que estiver nulo/vazio.
+    private void seedFotosEDadosFaltantes() {
+        int p = 0;
+        for (Patient pac : patientRepository.findAll()) {
+            boolean alterado = false;
+            if (isBlank(pac.getPhoto())) {
+                pac.setPhoto("https://i.pravatar.cc/200?u=" + encodeKey(pac.getEmail() != null ? pac.getEmail() : pac.getId().toString()));
+                alterado = true;
+            }
+            if (isBlank(pac.getPhone())) { pac.setPhone(String.format("119%08d", 10000000 + (p % 89999999))); alterado = true; }
+            if (isBlank(pac.getEmergencyContact())) { pac.setEmergencyContact("Contato de Emergência"); alterado = true; }
+            if (isBlank(pac.getEmergencyPhone())) { pac.setEmergencyPhone(String.format("119%08d", 20000000 + (p % 79999999))); alterado = true; }
+            if (isBlank(pac.getCity())) { pac.setCity("São Paulo"); alterado = true; }
+            if (isBlank(pac.getState())) { pac.setState("SP"); alterado = true; }
+            if (isBlank(pac.getNeighborhood())) { pac.setNeighborhood("Centro"); alterado = true; }
+            if (isBlank(pac.getClinicalNotes())) { pac.setClinicalNotes("Acompanhamento psicológico em andamento."); alterado = true; }
+            if (alterado) patientRepository.save(pac);
+            p++;
+        }
+
+        int u = 0;
+        for (User user : userRepository.findAll()) {
+            if (user.getRole() != Role.PSYCHOLOGIST) {
+                continue;
+            }
+            boolean alterado = false;
+            if (isBlank(user.getPhoto())) {
+                user.setPhoto("https://i.pravatar.cc/200?u=" + encodeKey(user.getEmail() != null ? user.getEmail() : user.getId().toString()));
+                alterado = true;
+            }
+            if (isBlank(user.getTelefone())) { user.setTelefone(String.format("119%08d", 30000000 + (u % 69999999))); alterado = true; }
+            if (isBlank(user.getCrp())) { user.setCrp(String.format("CRP 06/%06d", 100000 + (u % 899999))); alterado = true; }
+            if (alterado) userRepository.save(user);
+            u++;
+        }
+    }
+
+    private boolean isBlank(String s) {
+        return s == null || s.trim().isEmpty();
+    }
+
+    private String encodeKey(String key) {
+        return key.replaceAll("[^a-zA-Z0-9]", "");
     }
 
     // Dados ricos para popular a aplicação: pacientes do app real (agendfy),
@@ -83,6 +132,52 @@ public class DatabaseSeeder implements CommandLineRunner {
             createFeedbackWithLocation("carlos.cliente@agendfy.com", "Dias difíceis, mas escrevi no diário como combinamos.", 2, LocalDateTime.now().minusDays(3), -23.588, -46.632, "São Paulo, SP");
             createFeedbackWithLocation("mariana.cliente@agendfy.com", "Dormi melhor depois de cortar a cafeína à noite.", 4, LocalDateTime.now().minusDays(2), -23.5489, -46.6388, "São Paulo, SP");
             createFeedbackWithLocation("joao.cliente@agendfy.com", "Tive um episódio de raiva no trânsito, mas percebi o gatilho.", 3, LocalDateTime.now().minusDays(1), -23.5733, -46.6417, "São Paulo, SP");
+        }
+
+        seedDadosRicosAna();
+    }
+
+    // Conta de demonstração: muitas sessões (passadas e futuras) e feedbacks
+    // ricos para Ana, ideal para testar feedback por sessão e relatórios de IA.
+    private void seedDadosRicosAna() {
+        Patient ana = patientRepository.findByEmail("ana.cliente@agendfy.com").orElse(null);
+        // Ana é vinculada ao psicólogo teste@email.com (conta de demonstração).
+        User psi = userRepository.findByEmail("teste@email.com")
+                .orElseGet(() -> userRepository.findByEmail("marcos.psico@agendfy.com").orElse(null));
+        if (ana == null || psi == null) {
+            return;
+        }
+
+        // Garante o vínculo: reatribui todas as sessões existentes de Ana ao psi.
+        List<Sessao> sessoesAna = sessaoRepository.findByPatientId(ana.getId());
+        for (Sessao s : sessoesAna) {
+            if (s.getPsychologist() == null || !psi.getId().equals(s.getPsychologist().getId())) {
+                s.setPsychologist(psi);
+                sessaoRepository.save(s);
+            }
+        }
+
+        // Sessões extras (idempotente: só adiciona se Ana tiver poucas sessões).
+        if (sessoesAna.size() < 10) {
+            createSessao(ana, psi, LocalDateTime.now().minusDays(60).withHour(9).withMinute(0), "CONCLUIDA", "Anamnese e definição de objetivos terapêuticos.");
+            createSessao(ana, psi, LocalDateTime.now().minusDays(45).withHour(9).withMinute(0), "CONCLUIDA", "Psicoeducação sobre ansiedade e respiração diafragmática.");
+            createSessao(ana, psi, LocalDateTime.now().minusDays(38).withHour(9).withMinute(0), "CANCELADA", "Cancelada por imprevisto de trabalho.");
+            createSessao(ana, psi, LocalDateTime.now().minusDays(31).withHour(9).withMinute(0), "CONCLUIDA", "Reestruturação cognitiva de pensamentos catastróficos.");
+            createSessao(ana, psi, LocalDateTime.now().minusDays(24).withHour(9).withMinute(0), "CONCLUIDA", "Treino de exposição gradual a situações de apresentação.");
+            createSessao(ana, psi, LocalDateTime.now().minusDays(17).withHour(9).withMinute(0), "CONCLUIDA", "Revisão de tarefas e manejo de gatilhos no trabalho.");
+            createSessao(ana, psi, LocalDateTime.now().minusDays(4).withHour(9).withMinute(0), "CONCLUIDA", "Consolidação de estratégias e prevenção de recaída.");
+            createSessao(ana, psi, LocalDateTime.now().plusDays(2).withHour(9).withMinute(0), "AGENDADA", "");
+            createSessao(ana, psi, LocalDateTime.now().plusDays(9).withHour(9).withMinute(0), "AGENDADA", "");
+            createSessao(ana, psi, LocalDateTime.now().plusDays(16).withHour(9).withMinute(0), "AGENDADA", "");
+        }
+
+        // Feedbacks ricos para alimentar os relatórios de IA.
+        long feedbacksAna = feedbackRepository.findByPatientIdOrderByCreatedAtDesc(ana.getId()).size();
+        if (feedbacksAna < 5) {
+            createFeedbackWithLocation("ana.cliente@agendfy.com", "Comecei o tratamento bastante ansiosa, com dificuldade de dormir antes de reuniões importantes.", 2, LocalDateTime.now().minusDays(44), -23.561414, -46.655881, "São Paulo, SP");
+            createFeedbackWithLocation("ana.cliente@agendfy.com", "A técnica de respiração ajudou um pouco, mas ainda travo em apresentações.", 3, LocalDateTime.now().minusDays(30), -23.561414, -46.655881, "São Paulo, SP");
+            createFeedbackWithLocation("ana.cliente@agendfy.com", "Consegui fazer uma apresentação sem pânico pela primeira vez. Me senti no controle.", 4, LocalDateTime.now().minusDays(16), -23.561414, -46.655881, "São Paulo, SP");
+            createFeedbackWithLocation("ana.cliente@agendfy.com", "Semana puxada, mas usei as estratégias e dormi melhor. Humor estável.", 4, LocalDateTime.now().minusDays(3), -23.561414, -46.655881, "São Paulo, SP");
         }
     }
 
