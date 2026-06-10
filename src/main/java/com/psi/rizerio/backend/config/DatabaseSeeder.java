@@ -36,6 +36,78 @@ public class DatabaseSeeder implements CommandLineRunner {
         seedPatients();
         seedSessoesAndReports();
         seedFeedbacks();
+        seedAgendfyData();
+    }
+
+    // Dados ricos para popular a aplicação: pacientes do app real (agendfy),
+    // com perfis, sessões (passadas e futuras) e feedbacks com localização.
+    private void seedAgendfyData() {
+        User marcos = userRepository.findByEmail("marcos.psico@agendfy.com").orElse(null);
+        User beatriz = userRepository.findByEmail("beatriz.psico@agendfy.com").orElse(null);
+        User rafael = userRepository.findByEmail("rafael.psico@agendfy.com").orElse(null);
+        if (marcos == null) {
+            return;
+        }
+
+        seedPatientProfileIfMissing("ana.cliente@agendfy.com", "Ana Souza", "11991110001", "10100100101", LocalDate.of(1992, 3, 12), "Ansiedade relacionada a desempenho profissional.", -23.561414, -46.655881);
+        seedPatientProfileIfMissing("carlos.cliente@agendfy.com", "Carlos Lima", "11991110002", "10100100102", LocalDate.of(1988, 11, 5), "Acompanhamento de luto.", -23.588, -46.632);
+        seedPatientProfileIfMissing("mariana.cliente@agendfy.com", "Mariana Rocha", "11991110003", "10100100103", LocalDate.of(1995, 7, 22), "Estresse e dificuldades de sono.", -23.5489, -46.6388);
+        seedPatientProfileIfMissing("joao.cliente@agendfy.com", "João Mendes", "11991110004", "10100100104", LocalDate.of(1990, 1, 30), "Manejo de raiva e relacionamentos.", -23.5733, -46.6417);
+        seedPatientProfileIfMissing("fernanda.cliente@agendfy.com", "Fernanda Dias", "11991110005", "10100100105", LocalDate.of(1998, 9, 9), "Autoestima e imagem corporal.", -23.5955, -46.6840);
+        seedPatientProfileIfMissing("bruno.cliente@agendfy.com", "Bruno Carvalho", "11991110006", "10100100106", LocalDate.of(1985, 5, 18), "Burnout e equilíbrio trabalho-vida.", -23.5311, -46.6253);
+
+        // Garante agenda para cada paciente de teste (idempotente: só cria se o
+        // paciente ainda não tem nenhuma sessão).
+        String[] emails = {"ana.cliente@agendfy.com", "carlos.cliente@agendfy.com", "mariana.cliente@agendfy.com", "joao.cliente@agendfy.com", "fernanda.cliente@agendfy.com", "bruno.cliente@agendfy.com"};
+        User[] psicologos = {marcos, beatriz != null ? beatriz : marcos, rafael != null ? rafael : marcos};
+        int i = 0;
+        for (String email : emails) {
+            Patient p = patientRepository.findByEmail(email).orElse(null);
+            if (p == null) {
+                i++;
+                continue;
+            }
+            if (sessaoRepository.findByPatientId(p.getId()).isEmpty()) {
+                User psi = psicologos[i % psicologos.length];
+                createSessao(p, psi, LocalDateTime.now().minusDays(20 - i).withHour(10).withMinute(0), "CONCLUIDA", "Anamnese inicial e definição de objetivos.");
+                createSessao(p, psi, LocalDateTime.now().minusDays(10 - i).withHour(10).withMinute(0), "CONCLUIDA", "Aplicação de técnicas e revisão de tarefas.");
+                createSessao(p, psi, LocalDateTime.now().minusDays(3).withHour(11).withMinute(0), "CANCELADA", "Cancelada pelo paciente.");
+                createSessao(p, psi, LocalDateTime.now().plusDays(3 + i).withHour(15).withMinute(0), "AGENDADA", "");
+                createSessao(p, psi, LocalDateTime.now().plusDays(12 + i).withHour(15).withMinute(0), "AGENDADA", "");
+            }
+            i++;
+        }
+
+        if (feedbackRepository.count() < 8) {
+            createFeedbackWithLocation("ana.cliente@agendfy.com", "Semana mais tranquila, consegui aplicar a respiração antes da apresentação.", 4, LocalDateTime.now().minusDays(5), -23.561414, -46.655881, "São Paulo, SP");
+            createFeedbackWithLocation("carlos.cliente@agendfy.com", "Dias difíceis, mas escrevi no diário como combinamos.", 2, LocalDateTime.now().minusDays(3), -23.588, -46.632, "São Paulo, SP");
+            createFeedbackWithLocation("mariana.cliente@agendfy.com", "Dormi melhor depois de cortar a cafeína à noite.", 4, LocalDateTime.now().minusDays(2), -23.5489, -46.6388, "São Paulo, SP");
+            createFeedbackWithLocation("joao.cliente@agendfy.com", "Tive um episódio de raiva no trânsito, mas percebi o gatilho.", 3, LocalDateTime.now().minusDays(1), -23.5733, -46.6417, "São Paulo, SP");
+        }
+    }
+
+    private void seedPatientProfileIfMissing(String email, String fullName, String phone, String cpf, LocalDate birthDate, String clinicalNotes, Double lat, Double lng) {
+        if (patientRepository.findByEmail(email).isPresent()) {
+            return;
+        }
+        createPatientProfile(email, fullName, phone, cpf, birthDate, clinicalNotes, lat, lng);
+    }
+
+    private void createFeedbackWithLocation(String email, String content, int moodScore, LocalDateTime createdAt, Double lat, Double lng, String label) {
+        Patient patient = patientRepository.findByEmail(email).orElse(null);
+        if (patient == null) {
+            return;
+        }
+        Feedback f = Feedback.builder()
+                .patient(patient)
+                .content(content)
+                .moodScore(moodScore)
+                .createdAt(createdAt)
+                .latitude(lat)
+                .longitude(lng)
+                .locationLabel(label)
+                .build();
+        feedbackRepository.save(f);
     }
 
     private void seedUsers() {
@@ -101,10 +173,61 @@ public class DatabaseSeeder implements CommandLineRunner {
             userRepository.save(juliana);
             System.out.println("Psychologist user created: juliana@teste.com / senha123");
         }
-        
+
         createPatientUser("paciente@teste.com", "Paciente Teste");
         createPatientUser("maria@teste.com", "Maria Oliveira");
         createPatientUser("carlos@teste.com", "Carlos Silva");
+
+        // Usuários documentados no app (TEST-USERS.md) — para que as credenciais
+        // usadas no mobile funcionem direto contra o backend real (sem mock).
+        createPsychologist("teste@email.com", "Psicólogo", "123456", "CRP 06/111111", "11999990000");
+        createPsychologist("marcos.psico@agendfy.com", "Marcos Psicólogo", "Psico@1234", "CRP 06/222222", "11999990001");
+        createPsychologist("beatriz.psico@agendfy.com", "Beatriz Psicóloga", "123456", "CRP 06/333333", "11999990002");
+        createPsychologist("rafael.psico@agendfy.com", "Rafael Psicólogo", "123456", "CRP 06/444444", "11999990003");
+        createPsychologist("juliana.psico@agendfy.com", "Juliana Psicóloga", "123456", "CRP 06/555555", "11999990004");
+        createAdmin("admin@agendfy.com", "Administrador Agendfy", "Admin@1234");
+
+        createPatientUserWithPassword("ana.cliente@agendfy.com", "Ana Souza", "Cliente@1234");
+        createPatientUserWithPassword("carlos.cliente@agendfy.com", "Carlos Lima", "Cliente@1234");
+        createPatientUserWithPassword("mariana.cliente@agendfy.com", "Mariana Rocha", "123456");
+        createPatientUserWithPassword("joao.cliente@agendfy.com", "João Mendes", "123456");
+        createPatientUserWithPassword("fernanda.cliente@agendfy.com", "Fernanda Dias", "123456");
+        createPatientUserWithPassword("bruno.cliente@agendfy.com", "Bruno Carvalho", "123456");
+        // Paciente de primeiro acesso (sem perfil/CPF) — abre o formulário inicial.
+        createPatientUserWithPassword("novo.paciente@email.com", "Paciente Novo", "123456");
+    }
+
+    private void createPsychologist(String email, String name, String password, String crp, String telefone) {
+        if (userRepository.findByEmail(email).isEmpty()) {
+            userRepository.save(User.builder()
+                    .name(name).email(email)
+                    .password(passwordEncoder.encode(password))
+                    .role(Role.PSYCHOLOGIST).crp(crp).telefone(telefone)
+                    .build());
+            System.out.println("Psychologist user created: " + email + " / " + password);
+        }
+    }
+
+    private void createAdmin(String email, String name, String password) {
+        if (userRepository.findByEmail(email).isEmpty()) {
+            userRepository.save(User.builder()
+                    .name(name).email(email)
+                    .password(passwordEncoder.encode(password))
+                    .role(Role.ADMIN)
+                    .build());
+            System.out.println("Admin user created: " + email + " / " + password);
+        }
+    }
+
+    private void createPatientUserWithPassword(String email, String name, String password) {
+        if (userRepository.findByEmail(email).isEmpty()) {
+            userRepository.save(User.builder()
+                    .name(name).email(email)
+                    .password(passwordEncoder.encode(password))
+                    .role(Role.USER)
+                    .build());
+            System.out.println("Patient user created: " + email + " / " + password);
+        }
     }
 
     private void createPatientUser(String email, String name) {

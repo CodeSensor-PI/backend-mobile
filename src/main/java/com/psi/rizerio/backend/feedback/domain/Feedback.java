@@ -36,6 +36,12 @@ public class Feedback {
     
     private Integer moodScore; // 1 to 5 scale, for instance
 
+    private Double latitude;
+    private Double longitude;
+
+    @Column(name = "location_label")
+    private String locationLabel;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

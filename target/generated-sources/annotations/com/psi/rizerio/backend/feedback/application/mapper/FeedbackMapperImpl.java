@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2026-06-09T19:15:17-0300",
+    date = "2026-06-10T12:09:20-0300",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.9 (Oracle Corporation)"
 )
 @Component
@@ -28,6 +28,9 @@ public class FeedbackMapperImpl implements FeedbackMapper {
         feedback.sessaoId( dto.getSessaoId() );
         feedback.content( dto.getContent() );
         feedback.moodScore( dto.getMoodScore() );
+        feedback.latitude( dto.getLatitude() );
+        feedback.longitude( dto.getLongitude() );
+        feedback.locationLabel( dto.getLocationLabel() );
 
         return feedback.build();
     }
@@ -45,6 +48,9 @@ public class FeedbackMapperImpl implements FeedbackMapper {
         feedbackResponseDTO.setSessaoId( entity.getSessaoId() );
         feedbackResponseDTO.setContent( entity.getContent() );
         feedbackResponseDTO.setMoodScore( entity.getMoodScore() );
+        feedbackResponseDTO.setLatitude( entity.getLatitude() );
+        feedbackResponseDTO.setLongitude( entity.getLongitude() );
+        feedbackResponseDTO.setLocationLabel( entity.getLocationLabel() );
         feedbackResponseDTO.setCreatedAt( entity.getCreatedAt() );
 
         return feedbackResponseDTO;

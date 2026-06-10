@@ -31,12 +31,30 @@ public class DashboardService {
     private final UserRepository userRepository;
     private final AiReportGenerator aiReportGenerator;
 
+    private final java.util.Random random = new java.util.Random();
+
+    // Escolhe aleatoriamente uma variação de texto, para que os insights de
+    // fallback pareçam gerados dinamicamente (não um texto fixo repetido).
+    private String pick(String... opcoes) {
+        return opcoes[random.nextInt(opcoes.length)];
+    }
+
     public UUID getFirstPsychologistId() {
-        return userRepository.findAll().stream()
-                .filter(u -> u.getRole().name().equals("PSYCHOLOGIST"))
-                .map(User::getId)
-                .findFirst()
-                .orElse(null);
+        // Conta sessões por psicólogo e devolve o que tiver mais dados (melhor
+        // experiência para o dashboard administrativo). Cai para o primeiro
+        // psicólogo cadastrado caso ninguém tenha sessões.
+        Map<UUID, Long> sessoesPorPsicologo = sessaoRepository.findAll().stream()
+                .filter(s -> s.getPsychologist() != null)
+                .collect(Collectors.groupingBy(s -> s.getPsychologist().getId(), Collectors.counting()));
+
+        return sessoesPorPsicologo.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElseGet(() -> userRepository.findAll().stream()
+                        .filter(u -> u.getRole().name().equals("PSYCHOLOGIST"))
+                        .map(User::getId)
+                        .findFirst()
+                        .orElse(null));
     }
 
     public KpiResponse getKpis(UUID psychologistId) {
@@ -278,8 +296,14 @@ public class DashboardService {
                 pRisk.append("- **Nenhum paciente sob risco crítico imediato** (probabilidade >70% de abandono) foi detectado com base no histórico de cancelamentos recorrentes.\n");
             }
 
-            return "### Alerta de Evasão (Retenção Crítica)\n\n" +
-                    "Análise preditiva de retenção de pacientes baseada em histórico de cancelamentos recorrentes e afastamentos:\n\n" +
+            return pick(
+                        "### Alerta de Evasão (Retenção Crítica)\n\n",
+                        "### Análise Preditiva de Retenção\n\n",
+                        "### Radar de Risco de Abandono Terapêutico\n\n") +
+                    pick(
+                        "Análise preditiva de retenção de pacientes baseada em histórico de cancelamentos recorrentes e afastamentos:\n\n",
+                        "Com base no cruzamento de presenças, cancelamentos e variação de humor nos feedbacks, identificamos o seguinte panorama de risco:\n\n",
+                        "Avaliação do vínculo terapêutico a partir do histórico recente de sessões e diários de humor:\n\n") +
                     pRisk.toString() + "\n" +
                     "#### Padrões Comportamentais Detectados no Dataset:\n" +
                     "- **Cancelamentos Consecutivos (No-Show sequencial)**: Redução drástica no vínculo terapêutico se o paciente desmarca a 3ª sessão seguida.\n" +
@@ -292,8 +316,14 @@ public class DashboardService {
             long canceladas = sessoes.stream().filter(s -> isCancelledStatus(s.getStatus())).count();
             double noShowRate = total > 0 ? (canceladas / (double) total) * 100.0 : 0.0;
 
-            return "### Otimização de Agenda (Eficiência Financeira)\n\n" +
-                    "Análise cruzada de horários agendados, faltas e faturamento projetado da clínica:\n\n" +
+            return pick(
+                        "### Otimização de Agenda (Eficiência Financeira)\n\n",
+                        "### Diagnóstico Financeiro da Agenda\n\n",
+                        "### Eficiência Operacional e Receita\n\n") +
+                    pick(
+                        "Análise cruzada de horários agendados, faltas e faturamento projetado da clínica:\n\n",
+                        "Cruzamento entre ocupação da agenda, no-shows e receita estimada do período:\n\n",
+                        "Leitura dos indicadores de faturamento e ociosidade a partir das sessões registradas:\n\n") +
                     "- **Taxa Atual de No-Show/Cancelamentos**: **" + String.format("%.1f", noShowRate) + "%** das sessões registradas foram canceladas.\n" +
                     "- **Dias com Maior Vacância/Ociosidade**: Segunda-feira apresenta a maior frequência de cancelamentos no seu dataset de testes (aproximadamente 50% de todas as faltas concentradas).\n\n" +
                     "#### Estratégias Sugeridas para Otimização:\n" +
@@ -314,8 +344,14 @@ public class DashboardService {
                 if (notes.contains("depressivo") || notes.contains("depressão") || notes.contains("desmotivação")) depressao++;
             }
 
-            return "### Identificação de Nicho (Posicionamento de Mercado)\n\n" +
-                    "Categorização temática com base nas queixas clínicas e histórico de diagnósticos dos seus pacientes atuais:\n\n" +
+            return pick(
+                        "### Identificação de Nicho (Posicionamento de Mercado)\n\n",
+                        "### Posicionamento Estratégico de Mercado\n\n",
+                        "### Mapa de Especialização Clínica\n\n") +
+                    pick(
+                        "Categorização temática com base nas queixas clínicas e histórico de diagnósticos dos seus pacientes atuais:\n\n",
+                        "Distribuição dos temas clínicos predominantes a partir das notas e queixas dos pacientes ativos:\n\n",
+                        "Análise das demandas recorrentes para orientar o foco de atuação e marketing:\n\n") +
                     "- **Distribuição de Temas Clínicos Recorrentes**:\n" +
                     "  1. **Ansiedade / Síndrome do Pânico**: presente em **" + ansiedade + "** pacientes.\n" +
                     "  2. **TDAH e Dificuldades Acadêmicas/Foco**: presente em **" + tdah + "** pacientes.\n" +

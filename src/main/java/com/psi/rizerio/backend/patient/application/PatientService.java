@@ -38,13 +38,18 @@ public class PatientService {
                 .orElseGet(() -> {
                     com.psi.rizerio.backend.auth.domain.User user = userRepository.findById(userId)
                             .orElseThrow(() -> new RuntimeException("User not found"));
-                    Patient newPatient = Patient.builder()
-                            .userId(userId)
-                            .name(user.getName())
-                            .email(user.getEmail())
-                            .phone("00000000000") // Valor padrão para evitar erro de null
-                            .build();
-                    Patient saved = repository.save(newPatient);
+
+                    // Caso já exista um paciente com o mesmo e-mail (ex.: criado pelo
+                    // formulário sem vincular o userId), apenas vincula ao usuário
+                    // em vez de criar um novo (evita violar a unicidade de e-mail).
+                    Patient patient = repository.findByEmail(user.getEmail())
+                            .orElseGet(() -> Patient.builder()
+                                    .name(user.getName())
+                                    .email(user.getEmail())
+                                    .phone("00000000000") // Valor padrão para evitar erro de null
+                                    .build());
+                    patient.setUserId(userId);
+                    Patient saved = repository.save(patient);
                     return mapper.toDto(saved);
                 });
     }

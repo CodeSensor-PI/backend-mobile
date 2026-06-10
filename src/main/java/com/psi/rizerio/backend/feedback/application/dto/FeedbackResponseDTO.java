@@ -11,5 +11,8 @@ public class FeedbackResponseDTO {
     private UUID sessaoId;
     private String content;
     private Integer moodScore;
+    private Double latitude;
+    private Double longitude;
+    private String locationLabel;
     private LocalDateTime createdAt;
 }

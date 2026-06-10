@@ -51,7 +51,9 @@ public class DashboardController {
         if (psychologistId != null) {
             return psychologistId;
         }
-        if (user != null) {
+        // ADMIN não tem sessões próprias: mostra o painel do psicólogo com mais
+        // dados, para o dashboard administrativo aparecer completo.
+        if (user != null && user.getRole() != com.psi.rizerio.backend.auth.domain.Role.ADMIN) {
             return user.getId();
         }
         return dashboardService.getFirstPsychologistId();

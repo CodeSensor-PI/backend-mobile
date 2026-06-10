@@ -13,7 +13,7 @@ public class FeedbackRequestDTO {
     @NotNull(message = "Patient ID is required")
     private UUID patientId;
 
-    @NotNull(message = "Session ID is required")
+    // Opcional: feedback pode ser geral (sem vínculo a uma sessão específica).
     private UUID sessaoId;
 
     @NotBlank(message = "Content is required")
@@ -22,5 +22,9 @@ public class FeedbackRequestDTO {
     @Min(value = 1, message = "Mood score must be between 1 and 5")
     @Max(value = 5, message = "Mood score must be between 1 and 5")
     private Integer moodScore;
+
+    private Double latitude;
+    private Double longitude;
+    private String locationLabel;
 }
 
